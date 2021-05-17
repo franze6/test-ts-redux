@@ -1,24 +1,47 @@
-import React from 'react';
-import logo from './logo.svg';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import './App.css';
+import axios from 'axios';
+import { Task } from './interfaces';
+import TodoList from './components/TodoList/TodoList';
+import TodoItem from './components/TodoItem/TodoItem';
+import { useActions } from './hooks/useAction';
+import { useTypedSelector } from './hooks/useTypedSelector';
 
-function App() {
+const App = () => {
+
+  const {fetchTodos, deleteTodo, createTodo, updateTodo} = useActions();
+
+  const {error, loading, todos} = useTypedSelector(state => state.todo);
+
+  useEffect(() => {
+    fetchTodos();
+  }, [])
+
+  const onDeleteTask = useCallback(async (id: number) => {
+    await deleteTodo(id);
+    fetchTodos();
+  }, []);
+
+  const onChangeTask = useCallback(async (data: Task) => {
+    if (!data.id) 
+      await createTodo(data)
+    else
+      await updateTodo(data, data.id);
+    fetchTodos();
+  }, []);
+
+  const uncomptetedTasks = todos.filter(todo => !todo.completed)
+  const comptetedTasks = todos.filter(todo => todo.completed)
+
+
   return (
     <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+      <h1>Список задач</h1>
+      <TodoItem data={{ title: '', completed: false }} newTask onChange={onChangeTask}></TodoItem>
+      <h2>Текущие задачи</h2>
+      <TodoList tasks={uncomptetedTasks} onDelete={onDeleteTask} onChange={onChangeTask}></TodoList>
+      <h2>Завершенные</h2>
+      <TodoList tasks={comptetedTasks} onChange={onChangeTask}></TodoList>  
     </div>
   );
 }
